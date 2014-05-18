@@ -74,20 +74,31 @@
 
   var App = React.createClass({
     getInitialState: function() {
-      return {machine: undefined, tape: ''};
+      var t = M.createTransition;
+      var definition = "Machine.create('q1', ['q2'], [\n"+
+        "t('q1', '0', 'q2'),\n"+
+        "t('q1', '1', 'q2'),\n"+
+        "t('q1', '0', 'q3'),\n"+
+        "t('q2', '1', 'q3'),\n"+
+        "t('q3', '0', 'q1')\n"+
+        "]);";
+
+      var machine = eval(definition);
+      return {definition: definition, machine: machine, tape: '0100001'};
     },
     load: function(e) {
       e.preventDefault();
       var t = M.createTransition;
-      var machine = eval(this.refs.machine.getDOMNode().value);
+      var definition = this.refs.machine.getDOMNode().value;
+      var machine = eval(definition);
       this.setState({machine: machine, tape: this.refs.tape.getDOMNode().value});
     },
     render: function() {
       return (
         <div>
         <form onSubmit={this.load}>
-          <input type="text" ref="tape" />
-          <textarea ref="machine"></textarea>
+          <input type="text" ref="tape" defaultValue={this.state.tape} />
+          <textarea ref="machine">{this.state.definition}</textarea>
           <input type="submit" value="Load" />
         </form>
         {this.state.machine ? (
