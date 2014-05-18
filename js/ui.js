@@ -16,6 +16,31 @@
     }
   });
 
+  var Graph = React.createClass({
+    componentDidMount: function() {
+      this.renderer = new GraphRenderer();
+      var g = M.toGraph(this.props.machine, this.props.state);
+      this.drawGraph(g);
+    },
+    componentWillReceiveProps: function(nextProps) {
+      var g = M.toGraph(nextProps.machine, nextProps.state);
+      this.drawGraph(g);
+    },
+    drawGraph: function(g) {
+      var layout = this.renderer.run(g, d3.select(this.refs.canvas.getDOMNode()));
+      d3.select(this.getDOMNode())
+        .attr("width", layout.graph().width + 40)
+        .attr("height", layout.graph().height + 40);
+    },
+    render: function() {
+      return (
+        <svg width="20" height="20">
+          <g transform="translate(20, 20)" ref="canvas" />
+        </svg>
+      );
+    }
+  });
+
   var Runner = React.createClass({
     getInitialState: function() {
       return this.init(this.props);
@@ -35,7 +60,7 @@
     render: function() {
       return (
         <div>
-          <p>Current state: {this.state.state}</p>
+          <Graph machine={this.props.machine} state={this.state} />
           {this.state.done ?
             <p>{this.state.final ? 'Accepted!' : 'Not accepted.'}</p>
           : ''}
@@ -65,9 +90,11 @@
           <textarea ref="machine"></textarea>
           <input type="submit" value="Load" />
         </form>
-        <div>
-          {this.state.machine ? (<Runner machine={this.state.machine} tape={this.state.tape} />) : 'Machine not ready'}
-        </div>
+        {this.state.machine ? (
+          <div>
+          <Runner machine={this.state.machine} tape={this.state.tape} />
+          </div>
+        ) : 'Machine not ready'}
         </div>
       );
     }

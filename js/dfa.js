@@ -27,6 +27,7 @@ var DFA = {
       state: dfa.initialState,
       tape: tape,
       index: 0,
+      transition: null,
       done: done,
       final: done && _.contains(dfa.finalStates, dfa.initialState)
     };
@@ -42,7 +43,9 @@ var DFA = {
   nextState: function(dfa, state) {
     var transition = DFA.getTransition(dfa, state);
     if(transition === undefined) {
-      return undefined;
+      var val = _.clone(state);
+      val.done = true;
+      return val;
     }
     else {
       var newState = transition.to;
@@ -53,6 +56,7 @@ var DFA = {
         state: newState,
         tape: state.tape,
         index: newIndex,
+        transition: transition,
         done: done,
         final: final
       };
@@ -85,5 +89,23 @@ var DFA = {
     else {
       return false;
     }
+  },
+
+  toGraph: function(dfa, state) {
+    var g = new dagreD3.Digraph();
+    dfa.states.forEach(function(s) {
+      var classes = {
+        final: _.contains(dfa.finalStates, s),
+        current: s == state.state
+      };
+      g.addNode(s, { label: s, classes: classes});
+    });
+    dfa.transitions.forEach(function(t) {
+      var classes = {
+        current: t == state.transition
+      };
+      g.addEdge(t.from+'-'+t.input+'-'+t.to, t.from, t.to, { label: t.input, classes: classes });
+    });
+    return g;
   }
 };

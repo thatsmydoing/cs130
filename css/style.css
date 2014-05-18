@@ -3,8 +3,41 @@
   width: 1em;
   text-align: center;
   border: 1px solid black;
+  font-size: 24pt;
 }
 
 .cell.selected {
   background: yellow;
+}
+
+svg {
+  overflow: hidden;
+}
+
+.node circle {
+  stroke: #333;
+  stroke-width: 1.5px;
+  fill: #fff;
+}
+
+.node.final circle {
+  stroke-width: 2.5px;
+}
+
+.node.current circle {
+  fill: lightyellow;
+}
+
+.edgeLabel rect {
+  fill: #fff;
+}
+
+.edgePath {
+  stroke: #333;
+  stroke-width: 1.5px;
+  fill: none;
+}
+
+.edgePath.current {
+  stroke-width: 2.5px;
 }
