@@ -19,11 +19,11 @@
   var Graph = React.createClass({
     componentDidMount: function() {
       this.renderer = new GraphRenderer();
-      var g = M.toGraph(this.props.machine, this.props.state);
+      var g = M.toGraph(this.props.machine, this.props.description);
       this.drawGraph(g);
     },
     componentWillReceiveProps: function(nextProps) {
-      var g = M.toGraph(nextProps.machine, nextProps.state);
+      var g = M.toGraph(nextProps.machine, nextProps.description);
       this.drawGraph(g);
     },
     drawGraph: function(g) {
@@ -46,13 +46,13 @@
       return this.init(this.props);
     },
     init: function(props) {
-      return M.initialState(props.machine, props.tape);
+      return M.initialDescription(props.machine, props.tape);
     },
     reset: function() {
       this.setState(this.getInitialState());
     },
     step: function() {
-      this.setState(M.nextState(this.props.machine, this.state));
+      this.setState(M.nextDescription(this.props.machine, this.state));
     },
     componentWillReceiveProps: function(nextProps) {
       this.setState(this.init(nextProps));
@@ -60,7 +60,7 @@
     render: function() {
       return (
         <div>
-          <Graph machine={this.props.machine} state={this.state} />
+          <Graph machine={this.props.machine} description={this.state} />
           {this.state.done ?
             <p>{this.state.final ? 'Accepted!' : 'Not accepted.'}</p>
           : ''}
@@ -104,4 +104,4 @@
     <App />,
     document.getElementById('content')
   );
-})(DFA);
+})(Machine);
