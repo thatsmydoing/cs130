@@ -2,16 +2,42 @@ var Machine = {
   EPSILON_CHAR: '~',
 
   create: function(initialState, finalStates, transitions) {
+    function calculateEpsilonClosure(state, closure) {
+      var newClosure = _.chain(transitions)
+        .where({ from: state, input: Machine.EPSILON_CHAR })
+        .union(closure)
+        .uniq()
+        .value();
+      return _.chain(newClosure)
+        .difference(closure)
+        .compact()
+        .pluck('to')
+        .map(function(state) {
+          return calculateEpsilonClosure(state, newClosure);
+        })
+        .flatten()
+        .union(newClosure)
+        .uniq()
+        .value();
+    }
+
     var alphabet = _.chain(transitions).pluck('input').uniq().value();
     var states = [initialState].concat(finalStates);
     states = states.concat(_.chain(transitions).map(function(t) { return [t.from, t.to] }).flatten().value());
     states = _.uniq(states);
+    var epsilonClosures = _.object(states, states.map(function(state) {
+      return calculateEpsilonClosure(state, []).map(function(t) {
+        return { state: t.to, transition: t }
+      }).concat([ { state: state, transition: null } ]);
+    }));
+
     return {
       alphabet: alphabet,
       states: states,
       initialState: initialState,
       finalStates: finalStates,
-      transitions: transitions
+      transitions: transitions,
+      epsilonClosures: epsilonClosures
     };
   },
 
@@ -30,16 +56,29 @@ var Machine = {
       index: 0,
       done: done,
       final: done && _.contains(machine.finalStates, machine.initialState),
-      states: [
-        { state: machine.initialState, transition: null }
-      ]
+      states: machine.epsilonClosures[machine.initialState]
     };
   },
 
   getTransitions: function(machine, state, input) {
-    return _.filter(machine.transitions, function(t) {
-      return t.from == state && (t.input == Machine.EPSILON_CHAR || t.input == input);
-    });
+    var transitions = _.chain(machine.transitions)
+      .filter(function(t) {
+        return t.from == state && t.input == input;
+      })
+
+    var epsiloned = transitions
+      .pluck('to')
+      .map(function(state) {
+        return machine.epsilonClosures[state];
+      })
+      .flatten()
+      .pluck('transition')
+      .compact()
+      .uniq()
+      .value();
+
+    var all = transitions.union(epsiloned).uniq().value();
+    return all;
   },
 
   nextDescription: function(machine, description) {
