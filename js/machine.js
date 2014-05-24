@@ -1,4 +1,6 @@
 var Machine = {
+  EPSILON_CHAR: '~',
+
   create: function(initialState, finalStates, transitions) {
     var alphabet = _.chain(transitions).pluck('input').uniq().value();
     var states = [initialState].concat(finalStates);
@@ -34,9 +36,8 @@ var Machine = {
   },
 
   getTransitions: function(machine, state, input) {
-    return _.where(machine.transitions, {
-      from: state,
-      input: input
+    return _.filter(machine.transitions, function(t) {
+      return t.from == state && (t.input == Machine.EPSILON_CHAR || t.input == input);
     });
   },
 
@@ -108,10 +109,14 @@ var Machine = {
       g.addNode(s, { label: s, classes: classes});
     });
     machine.transitions.forEach(function(t) {
+      var label = t.input;
+      if(label == Machine.EPSILON_CHAR) {
+        label = "\u03B5";
+      }
       var classes = {
         current: _.contains(state.transitions, t)
       };
-      g.addEdge(t.from+'-'+t.input+'-'+t.to, t.from, t.to, { label: t.input, classes: classes });
+      g.addEdge(t.from+'-'+t.input+'-'+t.to, t.from, t.to, { label: label, classes: classes });
     });
     return g;
   }
