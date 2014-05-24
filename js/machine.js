@@ -26,12 +26,13 @@ var Machine = {
   initialDescription: function(machine, tape) {
     var done = tape.length == 0;
     return {
-      states: [ machine.initialState ],
       tape: tape,
       index: 0,
-      transitions: [],
       done: done,
-      final: done && _.contains(machine.finalStates, machine.initialState)
+      final: done && _.contains(machine.finalStates, machine.initialState),
+      states: [
+        { state: machine.initialState, transition: null }
+      ]
     };
   },
 
@@ -43,30 +44,33 @@ var Machine = {
 
   nextDescription: function(machine, description) {
     var input = description.tape.charAt(description.index);
-    var transitions = _.chain(description.states)
+    var newStates = _.chain(description.states)
       .map(function(state) {
-        return Machine.getTransitions(machine, state, input);
+        return Machine.getTransitions(machine, state.state, input).map(function(t) {
+          return {
+            state: t.to,
+            transition: t
+          };
+        });
       })
       .flatten()
       .value();
 
-    if(_.isEmpty(transitions)) {
+    if(_.isEmpty(newStates)) {
       var val = _.clone(description);
       val.done = true;
       return val;
     }
     else {
-      var newStates = _.pluck(transitions, 'to');
       var newIndex = description.index + 1;
       var done = description.tape.length == newIndex;
-      var final = done && !_.chain(machine.finalStates).intersection(newStates).isEmpty().value();
+      var final = done && !_.chain(machine.finalStates).intersection(_.pluck(newStates, 'state')).isEmpty().value();
       return {
-        states: newStates,
         tape: description.tape,
         index: newIndex,
-        transitions: transitions,
         done: done,
-        final: final
+        final: final,
+        states: newStates
       };
     }
   },
@@ -101,10 +105,12 @@ var Machine = {
 
   toGraph: function(machine, state) {
     var g = new dagreD3.Digraph();
+    var currentStates = _.chain(state.states).pluck('state');
+    var currentTransitions = _.chain(state.states).pluck('transition');
     machine.states.forEach(function(s) {
       var classes = {
         final: _.contains(machine.finalStates, s),
-        current: _.contains(state.states, s)
+        current: currentStates.contains(s).value()
       };
       g.addNode(s, { label: s, classes: classes});
     });
@@ -114,7 +120,7 @@ var Machine = {
         label = "\u03B5";
       }
       var classes = {
-        current: _.contains(state.transitions, t)
+        current: currentTransitions.contains(t).value()
       };
       g.addEdge(t.from+'-'+t.input+'-'+t.to, t.from, t.to, { label: label, classes: classes });
     });
