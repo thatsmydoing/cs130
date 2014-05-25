@@ -76,11 +76,23 @@
     getInitialState: function() {
       return {machine: undefined, tape: ''};
     },
+    componentDidUpdate: function() {
+      if(this.state.error) {
+        var textarea = this.refs.machine.getDOMNode();
+        var pos = this.state.error.index;
+        textarea.focus();
+        textarea.setSelectionRange(pos, pos+1);
+      }
+    },
     load: function(e) {
       e.preventDefault();
-      var t = M.createTransition;
-      var machine = eval(this.refs.machine.getDOMNode().value);
-      this.setState({machine: machine, tape: this.refs.tape.getDOMNode().value});
+      var parsed = Parser.parse(this.refs.machine.getDOMNode().value);
+      if(parsed.status) {
+        this.setState({machine: parsed.value, tape: this.refs.tape.getDOMNode().value, error: undefined});
+      }
+      else {
+        this.setState({error: parsed});
+      }
     },
     render: function() {
       return (
@@ -88,6 +100,7 @@
         <form onSubmit={this.load}>
           <input type="text" ref="tape" />
           <textarea ref="machine"></textarea>
+          {this.state.error ? 'Expected, '+this.state.error.expected : ''}
           <input type="submit" value="Load" />
         </form>
         {this.state.machine ? (
